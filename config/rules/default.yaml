@@ -1,0 +1,82 @@
+version: "1.0"
+engine: "postgresql"
+rules:
+  - id: "RULE_001_COMPOSITE_INDEX_ORDER"
+    name: "Composite Index Predicate Ordering"
+    severity: "CRITICAL"
+    description: "Large table read with a full scan; build a composite index ordered equality → range → sort."
+    condition:
+      has_full_table_scan: true
+      min_row_threshold: 10000
+    action:
+      recommend_index:
+        equality_first: true
+        range_second: true
+        include_sort_columns: true
+
+  - id: "RULE_002_LEADING_WILDCARD"
+    name: "Avoid Leading Wildcards in LIKE"
+    severity: "WARNING"
+    pattern: "LIKE '%...'"
+    recommendation: "Use pg_trgm GIN index or rephrase search predicate."
+
+  - id: "RULE_003_MISSING_FOREIGN_KEY_INDEX"
+    name: "Unindexed Foreign Keys in Joins"
+    severity: "HIGH"
+    condition:
+      join_type: "LEFT_JOIN"
+      foreign_key_indexed: false
+    action:
+      recommend_index:
+        target_table: "right_table"
+        columns: ["foreign_key_id"]
+
+  - id: "RULE_004_NOT_IN_SUBQUERY"
+    name: "NOT IN with a subquery"
+    severity: "HIGH"
+    condition:
+      has_not_in_subquery: true
+    recommendation: "Rewrite to NOT EXISTS so the planner can use an anti-join (and avoid the NULL trap)."
+
+  - id: "RULE_005_FUNCTION_ON_COLUMN"
+    name: "Non-SARGable function on a filtered column"
+    severity: "WARNING"
+    condition:
+      has_function_on_column: true
+    recommendation: "Compare the raw column (e.g. a date range) or add a matching expression index."
+
+  - id: "RULE_006_DEEP_OFFSET"
+    name: "Deep OFFSET pagination"
+    severity: "WARNING"
+    condition:
+      min_offset: 1000
+    recommendation: "Switch to keyset pagination: WHERE (sort_col, id) > (:last_sort, :last_id) ORDER BY sort_col, id LIMIT n."
+
+  - id: "RULE_007_STALE_STATISTICS"
+    name: "Planner row estimates far from reality"
+    severity: "HIGH"
+    condition:
+      min_row_misestimate: 50
+    recommendation: "Run ANALYZE on the affected tables; for correlated filter columns add CREATE STATISTICS (dependencies, ndistinct)."
+
+  - id: "RULE_008_DISK_SORT"
+    name: "Sort spilled to disk"
+    severity: "HIGH"
+    condition:
+      has_disk_sort: true
+    recommendation: "Add an index that provides the ORDER BY, or raise work_mem for this workload."
+
+  - id: "RULE_009_UNBOUNDED_DML"
+    name: "UPDATE/DELETE without WHERE"
+    severity: "CRITICAL"
+    condition:
+      missing_where: true
+    recommendation: "Add a WHERE clause or batch the change by primary-key ranges."
+
+  - id: "RULE_010_SELECT_STAR_JOIN"
+    name: "SELECT * across joins"
+    severity: "WARNING"
+    condition:
+      has_select_star: true
+      min_tables: 2
+    recommendation: "Project only the columns the caller needs; it enables index-only scans and smaller hash tables."

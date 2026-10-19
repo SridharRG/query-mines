@@ -1,0 +1,25 @@
+[workspace]
+resolver = "2"
+members = ["crates/qm-core", "crates/qm-drivers", "crates/qm-ai", "crates/qm-server"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[workspace.dependencies]
+qm-core = { path = "crates/qm-core" }
+qm-drivers = { path = "crates/qm-drivers" }
+qm-ai = { path = "crates/qm-ai" }
+
+anyhow = "1"
+async-trait = "0.1"
+chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+sqlparser = { version = "0.63", features = ["visitor", "serde"] }
+thiserror = "2"
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+regex = "1"

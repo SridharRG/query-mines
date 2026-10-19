@@ -1,0 +1,37 @@
+# Query Mines server configuration. ${VAR} / ${VAR:-default} are expanded
+# from the environment (and from .env in the working directory).
+
+server:
+  bind: "127.0.0.1:8787"
+  static_dir: "web/dist"
+  cors_origins: ["http://localhost:5173", "http://127.0.0.1:5173"]
+
+rules_path: "config/rules/default.yaml"
+
+telemetry:
+  interval_secs: 5
+  retention: 720          # samples per connection (1h at 5s)
+
+ai:
+  enabled: true
+  model: "openai/gpt-oss-120b"
+  fallback_models: ["qwen/qwen3.8-27b", "openai/gpt-oss-20b"]
+  temperature: 0.2
+  max_tokens: 4096
+  cost_threshold: 10000   # plans at/above this cost are flagged for AI review
+
+# Config Driver Model: each entry picks a driver by `engine`.
+connections:
+  - id: school-pg
+    name: "School DB"
+    engine: postgresql
+    url: "postgres://qm:${QM_PG_PASSWORD:-qm_dev_password}@127.0.0.1:54329/schooldb"
+    docker_container: qm-postgres
+    statement_timeout_ms: 15000
+    allow_analyze: true
+
+  - id: shop-mariadb
+    name: "Shop DB"
+    engine: mysql
+    url: "mysql://qm:${QM_MYSQL_PASSWORD:-qm_dev_password}@127.0.0.1:33307/shopdb"
+    docker_container: qm-mariadb

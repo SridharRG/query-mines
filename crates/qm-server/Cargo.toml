@@ -1,0 +1,24 @@
+[package]
+name = "qm-server"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "query-mines"
+path = "src/main.rs"
+
+[dependencies]
+qm-core.workspace = true
+qm-drivers.workspace = true
+qm-ai.workspace = true
+anyhow.workspace = true
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+axum = "0.8"
+tower-http = { version = "0.7", features = ["cors", "fs", "trace"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+dotenvy = "0.15"

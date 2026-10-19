@@ -1,0 +1,55 @@
+name: query-mines
+
+services:
+  postgres:
+    build: ./postgres
+    image: query-mines/postgres:18-hypopg
+    container_name: qm-postgres
+    environment:
+      POSTGRES_USER: qm
+      POSTGRES_PASSWORD: ${QM_PG_PASSWORD:-qm_dev_password}
+      POSTGRES_DB: schooldb
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - pg_stat_statements.track=all
+      - -c
+      - track_io_timing=on
+      - -c
+      - log_min_duration_statement=500
+    ports:
+      - "127.0.0.1:54329:5432"
+    volumes:
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+      - ./postgres/workload.sql:/workload/workload.sql:ro
+      - qm-pg-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qm -d schooldb"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  mariadb:
+    image: mariadb:11
+    container_name: qm-mariadb
+    profiles: ["mysql"]
+    environment:
+      MARIADB_ROOT_PASSWORD: ${QM_MYSQL_PASSWORD:-qm_dev_password}
+      MARIADB_DATABASE: shopdb
+      MARIADB_USER: qm
+      MARIADB_PASSWORD: ${QM_MYSQL_PASSWORD:-qm_dev_password}
+    command: ["--performance-schema=ON"]
+    ports:
+      - "127.0.0.1:33307:3306"
+    volumes:
+      - ./mariadb/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  qm-pg-data:
